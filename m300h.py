@@ -10,6 +10,14 @@ GET = 1
 EXECUTE = 2
 REPORT = 3 # ^X:P report command, P is the parameter e.g. '^LRRECV:1,22,-44,29,2,<ABCD,923.2,2\r\n'
 
+# dictionary of commands types
+COMMAND_TYPES_STR = {
+    SET: "SET",
+    GET: "GET",
+    EXECUTE: "EXECUTE",
+    REPORT: "REPORT"
+}
+
 SET_STR = "="
 GET_STR = "=?"
 EXECUTE_STR = ""
