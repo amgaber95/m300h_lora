@@ -34,7 +34,7 @@ class Lora(SerialCommunication):
         # TODO
         #   1. stop the thread from reading the coming data .. 
         # clear all coming data if any
-        command = command.serilize().encode()
+        command = command.serialize().encode()
         # timer = time.time()
         while self.is_available:
             # for debugging

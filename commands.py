@@ -77,13 +77,13 @@ class Command:
             except CommandError:
                 raise CommandError("Invalid field type {type}".format(type=field[1]))
     
-    def serilize(self):
+    def serialize(self):
         """
-        This method is used to serilize(convert to string) AT command to send to the gateway.
+        This method is used to serialize(convert to string) AT command to send to the gateway.
         """
         # construct the payload first
-        self._payload = "" if self._mode != REPORT else "" # intialize payload
-        if self._mode == REPORT: # TOCHECK doesn't make sense
+        self._payload = "" if self._mode != REPORT else "" # initialize payload
+        if self._mode == REPORT: # TODO: check doesn't make sense?
             return "^" + self.name + "=" + self._payload 
         if self._mode == GET:
             self._payload = ""
@@ -155,24 +155,24 @@ class Command:
 # #%% Testing 
 # lrsend = Command("LRSEND", SET, port=33, confirm=1, len=36, data="12396895")
 
-# print(lrsend.serilize())
+# print(lrsend.serialize())
 # vars(lrsend)
 
 # lrnsend = Command("LRNSEND", SET)
 # status = Command("STATUS", GET)
-# print(status.serilize())
+# print(status.serialize())
 # vars(lrsend)
 
 # device_class = Command("DEVCLASS", SET)
 # vars(device_class)
 # #%% Test serilzation
 # lrsend = Command("LRSEND", SET, port=33, confirm=0, len=33, data="<abcdef")
-# print(lrsend.serilize())
+# print(lrsend.serialize())
 
 # status = Command("STATUS", GET)
-# print(status.serilize())
+# print(status.serialize())
 
 # device_class = Command("DEVCLASS", SET)
-# print(device_class.serilize())
+# print(device_class.serialize())
 
 
