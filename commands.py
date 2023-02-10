@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#%% -*- coding: utf-8 -*-
 """
 @author: Abdelrahman Mahmoud Gaber
 @email: abdulrahman.mahmoud1995@gmail.com
@@ -8,7 +8,6 @@ from m300h import *
 
 from enum import IntEnum
 import re
-
 
 class Command:
        
@@ -101,11 +100,11 @@ class Command:
     @staticmethod 
     def construct_from_payload(command_name, mode, payload):
         """
-        This method is used to for parsing the recived data.
+        This method is used to for parsing the received data.
 
         :param command_name: name of the command
         :param type: command type (REPORT or others)
-        :param payload: data recived from the device
+        :param payload: data received from the device
         """
 
         command = Command(command_name, mode=mode)
@@ -113,7 +112,7 @@ class Command:
 
         fields_list = AT_COMMANDS_REPORT[command_name] if mode == REPORT else AT_COMMANDS[command_name] 
         for idx, field in enumerate(fields_list):
-            if field[0] == "data": # TOCHECK 
+            if field[0] == "data": # TODO: check if this is the best way to handle data 
                 payload[idx] = payload[idx].replace("<", "")
             command.__setattr__(field[0], field[1](payload[idx]))
         return command               
@@ -121,7 +120,7 @@ class Command:
     @staticmethod
     def command_check(command_str):
         """
-        Check if data contains AT Commands, if found return (command_name, payload).
+        Check if data contains AT Commands, if found return (command_name, command_mode, payload).
         
         .. NOTE::
             Make sure command_str is already decoded and doesn't have \r\n
@@ -131,6 +130,8 @@ class Command:
             :command_mode: mode of the command (REPORT or others)
             :payload: command payload
         """
+
+        command_str = command_str.decode("utf-8").strip() # decode and remove \r\n
         match = re.match(COMMAND_REGEX, command_str)
         if match is None:
             return None, None, None
@@ -140,14 +141,66 @@ class Command:
         payload = command_str[payload_index:].split(",")
         return command_name, command_mode, payload
 
+    @staticmethod
+    def parse(command_str):
+        """
+        This method is used to parse the received data.
 
-# #%% Testing from payload (for msg recived)
-# command_raw = "^LRRECV:1,22,-44,29,2,<ABCD,923.2,2\r\n".strip()
+        :param command_str: data received from the device
+        """
+
+        command_name, command_mode, payload = Command.command_check(command_str)
+        if command_name is None:
+            return None
+        return Command.construct_from_payload(command_name, command_mode, payload)
+    
+    def __getitem__(self, name):
+        """
+        This method is used to get the value of the field.
+        """
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            raise AttributeError(name)
+        
+    def __str__(self):
+        """
+        return a string representation of the command.
+        For example: LRSEND Command will be
+            LRSEND(mode=SET, payload={port=33, confirm=1, len=36, data=12396895})
+        """
+
+        name = self.name
+        mode = COMMAND_TYPES_STR[self._mode]
+        fields_list = AT_COMMANDS_REPORT[self.name] if self._mode == REPORT else AT_COMMANDS[self.name]
+        payload = ""
+        for field in fields_list:
+            payload += str(field[0]) + "=" + str(getattr(self, field[0])) + ", "
+        payload = payload[:-2] # remove last comma
+        return "{name}(mode={mode}, payload=[{payload}])".format(name=name, mode=mode, payload=payload)
+    
+    def __repr__(self):
+        return self.__str__()
+
+#%% Testing from payload (for msg recived)
+command_raw = b"^LRRECV:1,22,-44,29,2,<ABCD,923.2,2\r\n"
 # command_raw = "^LRJOIN:481.5,0"
 # command_raw = "^LRCONFIRM:1,-128,10,481.5,0"
 # name, mode, payload = Command.command_check(command_raw) 
 # print("name: ", name, "\nmode: ", mode, "\npayload: ", payload)
-# lrrecv = Command.construct_from_payload(name, mode, payload) 
+lrrecv = Command.parse(command_raw)
+print(lrrecv)
+print(lrrecv["data"])
+
+
+
+
+#%%
+
+
+
+
+
 # lrconfirm = Command.construct_from_payload(name, mode, payload)
 # print(lrrecv.data)
 # print(vars(lrrecv))
@@ -176,3 +229,5 @@ class Command:
 # print(device_class.serialize())
 
 
+
+# %%
