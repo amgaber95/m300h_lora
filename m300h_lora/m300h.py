@@ -53,7 +53,7 @@ AT_COMMANDS = { # for query, setup
     ),
 
     "REGION" : ( 
-        ("region", int),
+        ("region", str),
     ),
 
     "DEVCLASS": (
@@ -67,6 +67,91 @@ AT_COMMANDS = { # for query, setup
     "ACTIVEMODE": (
         ("mode", int),
     ),
+
+    "APPEUI": (
+        ("mode", str),
+    ),
+
+    "DEVEUI": (
+        ("mode", str),
+    ),
+
+    "APPKEY": (
+        ("mode", str),
+    ),
+
+    "ADREN": (
+        ("mode", int),
+    ),
+
+    "DUTYCYCLEEN": (
+        ("mode", int),
+    ),
+
+    "CONFTCNT": (
+        ("mode", int),
+    ),
+
+    "UCONFTCNT": (
+        ("mode", int),
+    ),
+    #Multicast
+    "MULTICAST": ( #AT+MULTICAST0=? <x>
+        ("mode", int),  #[b'\r\n', b'+MULTICAST0:1,0xFFFFFFFF,>FFEEDDCC8C7FC6CBC33D0809FB565001,>FFEEDDCC8C7FC6CBC33D0809FB565002,0\r\n', b'OK\r\n']
+    ),
+
+    "MULTICASTALL": ( #AT+ MULTICASTALL=?
+        ("mode", int), 
+    ),
+
+    "DEFAULTPW": (
+        ("mode", int),
+    ),
+
+    "CURRENTPW": (
+        ("mode", int),
+    ),
+
+    "DEFAULTDR": (
+        ("mode", int),
+    ),
+
+    "CURRENTDR": (
+        ("mode", int),
+    ),
+
+    "CHAN": ( #AT+CHAN0=? <x>
+        ("mode", int), # [b'\r\n', b'+CHAN0:923.2,0,5,1,0,1.0%\r\n', b'OK\r\n']
+    ),
+    
+    "CHANDIS": ( #SET Only
+        ("mode", int),
+    ),
+    
+    "CHANGROUP": ( #SET Only
+        ("mode", int),
+    ),
+
+    "CURRENTCHANALL": ( 
+        ("mode", int),
+    ),
+
+    "CHANMASK": ( #AT+CHANMASK0=? <x>
+        ("mode", int),  #[b'\r\n', b'+CHANMASK0:0x03FF\r\n', b'OK\r\n']
+    ),
+    
+    "CHANMASKALL": ( 
+        ("mode", int),  
+    ),
+
+    "RX2CHAN": ( 
+        ("mode", int),  
+    ),
+
+    "DIOSLEEP": ( 
+        ("mode", int),  
+    ),
+
 
 }
 
@@ -107,6 +192,51 @@ AT_COMMANDS_REPORT = {
     "STATUS": ( 
         ("status", int),
     ),
+    
+    "MULTICAST": ( # x, s, addr, appskey, nwkskey, seq
+        ("x" , int),  #Multicast sequence number, integer, range 0 to 3
+        ("s", int),   #Whether the multicast address is enabled, integer, range 0 to 1
+        ("addr" , str), #The short address used by this multicast address ranges from 0x00 to 0xFFFFFFFF
+        ("appskey", str), #The multicast address uses APPSKEY, block type, 16 bytes
+        ("nwkskey"  , str),   #The multicast address uses NWKSKEY, block type, 16 bytes
+        ("seq"  , str)  #The serial number currently used by the multicast address, an integer, ranges from 0 to 0xFFFFFFFF
+    ),
+
+    "CHAN": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
+        ("x" , int),  #Channel group number, integer, range: 0 to 15 (AS923), 0 to 15 (EU868), 0 to 15 (IN865), 0 to 15 (KR920), 0 to 15 (RU864).
+        ("freq", float),   #WFrequency, floating-point number, unit MHz
+        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
+        ("band"  , int), #The band number, integer, where the channel is located
+        ("dutycycle"  , int)  #The band number, integer, where the channel is located
+    ),
+
+    "CURRENTCHANALL": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
+        ("x" , int),  #Range: 0 to 15 (AS923), 0 to 71 (AU915), 0 to 95 (CN470), 0 to 15 (EU868), 0 to 15 (IN864), 0 to 15 (KR920), 0 to 15 (RU864), 0 to 71 (US915).
+        ("freq", float),   #WFrequency, floating-point number, unit MHz
+        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
+        ("band"  , int),  #The band number, integer, where the channel is located
+        ("dutycycle"  , int)  #The band number, integer, where the channel is located
+    ),
+
+    "CHANMASK": ( # x, mask  (AS923)
+        ("x" , int),  #Range: 0 to 15 (AS923), 0 to 71 (AU915), 0 to 95 (CN470), 0 to 15 (EU868), 0 to 15 (IN864), 0 to 15 (KR920), 0 to 15 (RU864), 0 to 71 (US915).
+        ("mask", int)   #Channel enable mask, integer, range 0x0000 to 0xFFFF
+    ),
+
+    "RX2CHAN": ( # freq, dr  (AS923)
+        ("freq" , float),  #WFrequency, floating-point number, unit MHz
+        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
+    ),
+    
+    "DIOSLEEP": ( # freq, dr  (AS923)
+        ("freq" , float),  #WFrequency, floating-point number, unit MHz
+        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
+    ),
+
 }
 
 # status network enum
@@ -128,8 +258,63 @@ class DevClassStatus(IntEnum):
 
 class ActiveMode(IntEnum):
     OTAA = 0
-    ABP = 1 # gps detected 
+    ABP = 1 
     OTAA_RPM = 2 
+
+class ADRFunction(IntEnum):
+    ADRDISABLE = 0
+    ADRENABLE = 1 
+
+class DutyCycle(IntEnum):
+    DUTYCYCLEDISABLE = 0
+    DUTYCYCLEENABLE = 1 
+
+class DefaultPower(IntEnum):
+    DBM_16 = 0
+    DBM_14 = 1
+    DBM_12 = 2
+    DBM_10 = 3
+    DBM_8 = 4
+    DBM_6 = 5
+    DBM_4 = 6
+    DBM_2 = 7 
+
+class CurrentPower(IntEnum):
+    DBm_16 = 0
+    DBm_14 = 1
+    DBm_12 = 2
+    DBm_10 = 3
+    DBm_8 = 4
+    DBm_6 = 5
+    DBm_4 = 6
+    DBm_2 = 7     
+     
+class DefaultADR(IntEnum):
+    DR_0 = 0
+    DR_1 = 1
+    DR_2 = 2
+    DR_3 = 3
+    DR_4 = 4
+    DR_5 = 5
+    DR_6 = 6
+    DR_7 = 7 
+
+class CurrentADR(IntEnum):
+    DR_0 = 0
+    DR_1 = 1
+    DR_2 = 2
+    DR_3 = 3
+    DR_4 = 4
+    DR_5 = 5
+    DR_6 = 6
+    DR_7 = 7     
+           
+
+ActiveModeMsg = {
+    0: "OTAA network access mode",
+    1: "ABP network access mode",
+    2: "After OTAA is connected to the network, switch to ABP network access mode"
+}
 
 StatusMsg = {
     0: "Reset",
@@ -149,7 +334,34 @@ ErrorMsg = {
     7 : "The LORAWAN data send queue is full",
     10 : "The module is not activated"
 }
-
+ADRFunctionMsg = {
+    0: "The ADR function is not enabled",
+    1: "Enable the ADR function"
+}
+DutyCycleMsg = {
+    0: "Does not enable DUTYCYCLE function",
+    1: "Enables DUTYCYCLE function"
+}
+DefaultADRMsg = {
+    0 : "DR_0(SF12 BW125K)",
+    1 : "DR_1(SF11 BW125K)",
+    2 : "DR_2(SF10 BW125K)",
+    3 : "DR_3(SF9 BW125K)",
+    4 : "DR_4(SF8 BW125K)",
+    5 : "DR_5(SF7 BW125K)",
+    6 : "DR_6(SF7 BW250K)",
+    7 : "DR_7(FSK 50K)"
+}
+CurrentADRMsg = {
+    0 : "DR_0(SF12 BW125K)",
+    1 : "DR_1(SF11 BW125K)",
+    2 : "DR_2(SF10 BW125K)",
+    3 : "DR_3(SF9 BW125K)",
+    4 : "DR_4(SF8 BW125K)",
+    5 : "DR_5(SF7 BW125K)",
+    6 : "DR_6(SF7 BW250K)",
+    7 : "DR_7(FSK 50K)"
+}
 class CommandNotFoundError(Exception):
     """
     Exception for when a command is not found or defined in AT commands
