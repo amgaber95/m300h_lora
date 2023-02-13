@@ -2,7 +2,7 @@
 @author: Abdelrahman Mahmoud Gaber
 @email: abdulrahman.mahmoud1995@gmail.com
 """
-
+#%%
 from serial_communication import *
 from commands import *
 
@@ -45,7 +45,29 @@ class Lora(SerialCommunication):
             #     raise Exception("Couldn't clear the buffer")
         self.send(command)
         return 
+lora = Lora("COM12", 9600, timeout=0.1) #/dev/ttyUSB1
+lora.connect()
 
+#%%
+# lora.connect()
+lora.send(b"AT+DIOSLEEP=?\r\n")
+time.sleep(0.1)
+print("coming data: ",  lora.is_available)
+data = lora.readlines()
+print(data)
+#%%
+
+
+
+time.sleep(0.1)
+print("coming data: ",  lora.is_available)
+data = lora.readlines()
+print(data)
+
+name, mode, payload = Command.command_check(data[1]) 
+lrrecv = Command.construct_from_payload(name, mode, payload)
+#print(lrrecv.data[1])
+print(vars(lrrecv))
 
 
 # lora = Lora("/dev/ttyUSB1", 9600, timeout=0.1)
