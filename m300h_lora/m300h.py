@@ -29,7 +29,8 @@ CRLF = "\r\n"
 
 AT_CMD_PREFIX = "AT+"
 
-COMMAND_REGEX = r"(?:\^|\+)([A-Z0-9]*):" # command regex to check if data contains a command
+COMMAND_REGEX = r"(?:\^|\+)([0-9A-Z]+[A-Z]+):" # command regex to check if data contains a command
+COMMAND_CHANNEL_REGEX = r"(?:\^|\+)([0-9A-Z]*[A-Z]+)([0-9]+):"
 
 AT_COMMANDS = { # for query, setup 
 
@@ -95,10 +96,6 @@ AT_COMMANDS = { # for query, setup
     "UCONFTCNT": (
         ("mode", int),
     ),
-    #Multicast
-    "MULTICAST": ( #AT+MULTICAST0=? <x>
-        ("mode", int),  #[b'\r\n', b'+MULTICAST0:1,0xFFFFFFFF,>FFEEDDCC8C7FC6CBC33D0809FB565001,>FFEEDDCC8C7FC6CBC33D0809FB565002,0\r\n', b'OK\r\n']
-    ),
 
     "MULTICASTALL": ( #AT+ MULTICASTALL=?
         ("mode", int), 
@@ -113,33 +110,25 @@ AT_COMMANDS = { # for query, setup
     ),
 
     "DEFAULTDR": (
-        ("mode", int),
+        ("pw", int),
     ),
 
     "CURRENTDR": (
         ("mode", int),
     ),
-
-    "CHAN": ( #AT+CHAN0=? <x>
-        ("mode", int), # [b'\r\n', b'+CHAN0:923.2,0,5,1,0,1.0%\r\n', b'OK\r\n']
-    ),
     
-    "CHANDIS": ( #SET Only
+    "CHANDIS": ( # SET Only
         ("mode", int),
     ),
     
-    "CHANGROUP": ( #SET Only
+    "CHANGROUP": ( # SET Only
         ("mode", int),
     ),
 
     "CURRENTCHANALL": ( 
         ("mode", int),
     ),
-
-    "CHANMASK": ( #AT+CHANMASK0=? <x>
-        ("mode", int),  #[b'\r\n', b'+CHANMASK0:0x03FF\r\n', b'OK\r\n']
-    ),
-    
+   
     "CHANMASKALL": ( 
         ("mode", int),  
     ),
@@ -152,7 +141,48 @@ AT_COMMANDS = { # for query, setup
         ("mode", int),  
     ),
 
+    "CURRENTCHANALL": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
+        ("x" , int),  #Range: 0 to 15 (AS923), 0 to 71 (AU915), 0 to 95 (CN470), 0 to 15 (EU868), 0 to 15 (IN864), 0 to 15 (KR920), 0 to 15 (RU864), 0 to 71 (US915).
+        ("freq", float),   #WFrequency, floating-point number, unit MHz
+        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
+        ("band"  , int),  #The band number, integer, where the channel is located
+        ("dutycycle"  , int)  #The band number, integer, where the channel is located
+    ),
 
+    "RX2CHAN": ( # freq, dr  (AS923)
+        ("freq" , float),  #WFrequency, floating-point number, unit MHz
+        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
+    ),
+    
+    "DIOSLEEP": ( # freq, dr  (AS923)
+        ("freq" , float),  #WFrequency, floating-point number, unit MHz
+        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
+    ),
+
+#   COMMANDS WITH CHANNELS
+
+    "CHANMASK": ( # x, mask  (AS923)
+        ("mask", int)   #Channel enable mask, integer, range 0x0000 to 0xFFFF
+    ),
+
+    "CHAN": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
+        ("freq", float),   #WFrequency, floating-point number, unit MHz
+        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
+        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
+        ("band"  , int), #The band number, integer, where the channel is located
+        ("dutycycle"  , int)  #The band number, integer, where the channel is located
+    ),
+
+    "MULTICAST": ( # x, s, addr, appskey, nwkskey, seq
+        ("s", int),   #Whether the multicast address is enabled, integer, range 0 to 1
+        ("addr" , str), #The short address used by this multicast address ranges from 0x00 to 0xFFFFFFFF
+        ("appskey", str), #The multicast address uses APPSKEY, block type, 16 bytes
+        ("nwkskey"  , str),   #The multicast address uses NWKSKEY, block type, 16 bytes
+        ("seq"  , str)  #The serial number currently used by the multicast address, an integer, ranges from 0 to 0xFFFFFFFF
+    ),
 }
 
 AT_COMMANDS_REPORT = {
@@ -192,52 +222,8 @@ AT_COMMANDS_REPORT = {
     "STATUS": ( 
         ("status", int),
     ),
-    
-    "MULTICAST": ( # x, s, addr, appskey, nwkskey, seq
-        ("x" , int),  #Multicast sequence number, integer, range 0 to 3
-        ("s", int),   #Whether the multicast address is enabled, integer, range 0 to 1
-        ("addr" , str), #The short address used by this multicast address ranges from 0x00 to 0xFFFFFFFF
-        ("appskey", str), #The multicast address uses APPSKEY, block type, 16 bytes
-        ("nwkskey"  , str),   #The multicast address uses NWKSKEY, block type, 16 bytes
-        ("seq"  , str)  #The serial number currently used by the multicast address, an integer, ranges from 0 to 0xFFFFFFFF
-    ),
-
-    "CHAN": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
-        ("x" , int),  #Channel group number, integer, range: 0 to 15 (AS923), 0 to 15 (EU868), 0 to 15 (IN865), 0 to 15 (KR920), 0 to 15 (RU864).
-        ("freq", float),   #WFrequency, floating-point number, unit MHz
-        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
-        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
-        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
-        ("band"  , int), #The band number, integer, where the channel is located
-        ("dutycycle"  , int)  #The band number, integer, where the channel is located
-    ),
-
-    "CURRENTCHANALL": ( # x, freq, dr_min, dr_max, s, band, dutycycle  (AS923)
-        ("x" , int),  #Range: 0 to 15 (AS923), 0 to 71 (AU915), 0 to 95 (CN470), 0 to 15 (EU868), 0 to 15 (IN864), 0 to 15 (KR920), 0 to 15 (RU864), 0 to 71 (US915).
-        ("freq", float),   #WFrequency, floating-point number, unit MHz
-        ("dr_min" , int), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
-        ("dr_max", str), #Range: 0 to 7 (AS923), 0 to 7 (EU868), 0 to 7 (IN865), 0 to 5 (KR920).
-        ("s"  , int),   #Whether the channel is enabled 0: Not enabled 1: Enable
-        ("band"  , int),  #The band number, integer, where the channel is located
-        ("dutycycle"  , int)  #The band number, integer, where the channel is located
-    ),
-
-    "CHANMASK": ( # x, mask  (AS923)
-        ("x" , int),  #Range: 0 to 15 (AS923), 0 to 71 (AU915), 0 to 95 (CN470), 0 to 15 (EU868), 0 to 15 (IN864), 0 to 15 (KR920), 0 to 15 (RU864), 0 to 71 (US915).
-        ("mask", int)   #Channel enable mask, integer, range 0x0000 to 0xFFFF
-    ),
-
-    "RX2CHAN": ( # freq, dr  (AS923)
-        ("freq" , float),  #WFrequency, floating-point number, unit MHz
-        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
-    ),
-    
-    "DIOSLEEP": ( # freq, dr  (AS923)
-        ("freq" , float),  #WFrequency, floating-point number, unit MHz
-        ("dr", int)   #Default values: 2 (AS923), 8 (AU915), 0 (CN470), 0 (EU868), 2 (IN865), 0 (KR920), 0 (RU864), 8 (US915).
-    ),
-
 }
+
 
 # status network enum
 class StatusNetwork(IntEnum):

@@ -35,7 +35,17 @@ class Command:
         elif self._mode == REPORT:
             self._mode_str = ""
         
-        if self.name not in (*AT_COMMANDS.keys(), *AT_COMMANDS_REPORT): # make sure command is defined
+        # check if name ends of numbers
+        regex = r"^[0-9A-Z][A-Z]+([0-9]+)$" # to get the number at the end
+        self.base_name = self.name # to keep the original name
+        if self.name[-1].isdigit():
+            match = re.match(regex, self.name)
+            if match is not None:
+                self.base_name = self.name[:-len(match.groups()[0])]
+            else:
+                raise CommandError("Invalid command name {name}".format(name=self.name))         
+
+        if self.base_name not in (*AT_COMMANDS, *AT_COMMANDS_REPORT): # make sure command is defined
             raise CommandNotFoundError("Command not found or not defined")
 
         if self._mode not in (GET, SET, EXECUTE, REPORT):
@@ -49,7 +59,11 @@ class Command:
         This method is used to set command fields such as port, seq, len, etc.
         """
 
-        fields_list = AT_COMMANDS[self.name] # defualt fields defined in AT_COMMAND
+        # check which dictionary the command belongs to
+
+
+
+        fields_list = AT_COMMANDS[self.base_name] # defualt fields defined in AT_COMMAND
         fields_passed = kwargs.keys()
         if len(kwargs) == 0: # if no kwargs, assume all fields are null (normal value)
             self._set_default_attribute()
@@ -69,7 +83,7 @@ class Command:
 
     def _set_default_attribute(self):
         
-        fields_list = AT_COMMANDS_REPORT[self.name] if self._mode == REPORT else AT_COMMANDS[self.name]
+        fields_list = AT_COMMANDS_REPORT[self.base_name] if self._mode == REPORT else AT_COMMANDS[self.base_name]
         for field in fields_list:
             try:
                 setattr(self, field[0], field[1]())
@@ -87,7 +101,7 @@ class Command:
         if self._mode == GET:
             self._payload = ""
         elif self._mode == SET:
-            fields_list = AT_COMMANDS[self.name]
+            fields_list = AT_COMMANDS[self.base_name]
             for field in fields_list:
                 self._payload += str(getattr(self, field[0])) + ","
             self._payload = self._payload[:-1] # remove last comma
@@ -109,8 +123,8 @@ class Command:
 
         command = Command(command_name, mode=mode)
         command._payload = payload
-
-        fields_list = AT_COMMANDS_REPORT[command_name] if mode == REPORT else AT_COMMANDS[command_name] 
+        base_name = command.base_name
+        fields_list = AT_COMMANDS_REPORT[base_name] if mode == REPORT else AT_COMMANDS[base_name] 
         for idx, field in enumerate(fields_list):
             if field[0] == "data": # TODO: check if this is the best way to handle data 
                 payload[idx] = payload[idx].replace("<", "")
@@ -132,10 +146,15 @@ class Command:
         """
 
         command_str = command_str.decode("utf-8").strip() # decode and remove \r\n
-        match = re.match(COMMAND_REGEX, command_str)
-        if match is None:
-            return None, None, None
-        command_name = match.groups()[0]
+        command_name, command_mode, payload_index = None, None, None
+        match = re.match(COMMAND_CHANNEL_REGEX, command_str)
+        if match: # check if command is channel command
+            command_name = match.groups()[0] + match.groups()[1]
+        else:
+            match = re.match(COMMAND_REGEX, command_str)
+            if match is None:
+                return None, None, None
+            command_name = match.groups()[0]
         command_mode = REPORT if command_str.startswith("^") else GET # we only care about REPORT here
         payload_index = match.regs[0][1]
         payload = command_str[payload_index:].split(",")
@@ -172,7 +191,7 @@ class Command:
 
         name = self.name
         mode = COMMAND_TYPES_STR[self._mode]
-        fields_list = AT_COMMANDS_REPORT[self.name] if self._mode == REPORT else AT_COMMANDS[self.name]
+        fields_list = AT_COMMANDS_REPORT[self.base_name] if self._mode == REPORT else AT_COMMANDS[self.base_name]
         payload = ""
         for field in fields_list:
             payload += str(field[0]) + "=" + str(getattr(self, field[0])) + ", "
@@ -183,24 +202,24 @@ class Command:
         return self.__str__()
 
 #%% Testing from payload (for msg recived)
-command_raw = b"^LRRECV:1,22,-44,29,2,<ABCD,923.2,2\r\n"
+# command_raw = b"^LRRECV:1,22,-44,29,2,<ABCD,923.2,2\r\n"
 # command_raw = "^LRJOIN:481.5,0"
 # command_raw = "^LRCONFIRM:1,-128,10,481.5,0"
 # name, mode, payload = Command.command_check(command_raw) 
 # print("name: ", name, "\nmode: ", mode, "\npayload: ", payload)
-lrrecv = Command.parse(command_raw)
-print(lrrecv)
-print(lrrecv["data"])
-
-
-
+# lrrecv = Command.parse(command_raw)
+# print(lrrecv)
+# print(lrrecv["data"])
 
 #%%
+# AT+MULTICAST0=1,0xFFFFFFFF,>FEEDDCC8C7FC6CBC33D0809FB565001,>F Set the multicast address
+# EEDDCC8C7FC6CBC33D0809FB565002,0
+multicast = Command("MULTICAST25", GET, s=1, addr="0xFFFFFFFF", appskey=">FEEDDCC8C7FC6CBC33D0809FB565001", nwkskey=">FEEDDCC8C7FC6CBC33D0809FB565002", seq=0)
+multicast.serialize()
 
-
-
-
-
+command_raw = b'+MULTICAST56:1,0xFFFFFFFF,>FFEEDDCC8C7FC6CBC33D0809FB565001,>FFEEDDCC8C7FC6CBC33D0809FB565002,0\r\n'
+multicast = Command.parse(command_raw)
+print(multicast)
 # lrconfirm = Command.construct_from_payload(name, mode, payload)
 # print(lrrecv.data)
 # print(vars(lrrecv))
@@ -227,6 +246,8 @@ print(lrrecv["data"])
 
 # device_class = Command("DEVCLASS", SET)
 # print(device_class.serialize())
+
+
 
 
 
